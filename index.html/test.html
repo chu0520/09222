@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校園生態觀察記錄 - Google Apps Script 測試工具</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen py-8 px-4 sm:px-6">
+
+  <main class="max-w-4xl mx-auto space-y-6">
+    <!-- Top Header -->
+    <header class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-2xl shadow-inner">
+          <i class="fa-solid fa-leaf"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-slate-800">生態調查試算表介接測試器</h1>
+          <p class="text-sm text-slate-500">測試 Google Apps Script Web App 端點與資料寫入狀況</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button 
+          id="btn-fill-sample" 
+          type="button" 
+          class="px-3.5 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i>
+          一鍵填入測試資料
+        </button>
+      </div>
+    </header>
+
+    <!-- Endpoint Configuration Card -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-link text-brand-600"></i> Apps Script 網頁應用程式網址 (Web App URL)
+      </h2>
+      <div class="space-y-2">
+        <div class="relative">
+          <input 
+            type="url" 
+            id="gas-url" 
+            placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+            class="w-full pl-10 pr-24 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-mono text-sm bg-slate-50/50"
+            required
+          >
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <i class="fa-solid fa-globe"></i>
+          </div>
+          <button 
+            id="btn-clear-url" 
+            type="button"
+            title="清除網址"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-xs text-slate-400 hover:text-slate-600">
+            清除
+          </button>
+        </div>
+        <p class="text-xs text-slate-500 flex items-center gap-1">
+          <i class="fa-solid fa-circle-info text-blue-500"></i>
+          網址會自動儲存在瀏覽器的 LocalStorage 中，下次開啟無須重新輸入。
+        </p>
+      </div>
+    </section>
+
+    <!-- Main Form Section -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-clipboard-list text-brand-600"></i> 觀察紀錄欄位測試
+      </h2>
+
+      <form id="test-form" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Timestamp -->
+          <div>
+            <label for="field-timestamp" class="block text-sm font-medium text-slate-700 mb-1">
+              日期時間 (Timestamp)
+            </label>
+            <div class="flex gap-2">
+              <input 
+                type="text" 
+                id="field-timestamp" 
+                name="timestamp" 
+                placeholder="2026-09-22 15:30:00" 
+                class="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-mono"
+              >
+              <button 
+                id="btn-set-now" 
+                type="button" 
+                class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-xl font-medium transition-colors shrink-0"
+                title="填入現在時間">
+                <i class="fa-regular fa-clock mr-1"></i> 現在
+              </button>
+            </div>
+          </div>
+
+          <!-- Campus Location -->
+          <div>
+            <label for="field-location" class="block text-sm font-medium text-slate-700 mb-1">
+              校園地點 (Location)
+            </label>
+            <input 
+              type="text" 
+              id="field-location" 
+              name="location" 
+              list="location-options" 
+              placeholder="例如：行政大樓後方草坪、生態池木棧道" 
+              class="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+            >
+            <datalist id="location-options">
+              <option value="生態池木棧道">
+              <option value="行政大樓後方草坪">
+              <option value="圖書館綠映中庭">
+              <option value="體育館旁樟樹林">
+              <option value="校門口景觀花園">
+            </datalist>
+          </div>
+
+          <!-- GPS Coordinates -->
+          <div>
+            <label for="field-gps" class="block text-sm font-medium text-slate-700 mb-1">
+              GPS 經緯度座標
+            </label>
+            <div class="flex gap-2">
+              <input 
+                type="text" 
+                id="field-gps" 
+                name="gps" 
+                placeholder="25.1753, 121.4428" 
+                class="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-mono"
+              >
+              <button 
+                id="btn-get-gps" 
+                type="button" 
+                class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-xl font-medium transition-colors shrink-0 flex items-center gap-1"
+                title="取得目前裝置 GPS 位置">
+                <i class="fa-solid fa-location-crosshairs text-brand-600"></i>
+                <span id="gps-btn-text">抓取定位</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Species -->
+          <div>
+            <label for="field-species" class="block text-sm font-medium text-slate-700 mb-1">
+              物種名稱 (Species)
+            </label>
+            <input 
+              type="text" 
+              id="field-species" 
+              name="species" 
+              placeholder="例如：黑冠麻鷺、五色鳥、鳳頭蒼鷹" 
+              class="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+            >
+          </div>
+
+          <!-- Quantity and Unit -->
+          <div class="md:col-span-2">
+            <label for="field-quantity" class="block text-sm font-medium text-slate-700 mb-1">
+              數量與單位 (Quantity & Unit)
+            </label>
+            <input 
+              type="text" 
+              id="field-quantity" 
+              name="quantityWithUnit" 
+              placeholder="例如：2 隻、1 巢、5 棵" 
+              class="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+            >
+          </div>
+
+          <!-- Note -->
+          <div class="md:col-span-2">
+            <label for="field-note" class="block text-sm font-medium text-slate-700 mb-1">
+              備註說明 (Notes)
+            </label>
+            <textarea 
+              id="field-note" 
+              name="note" 
+              rows="3" 
+              placeholder="天氣晴朗、棲息於大樹枝幹、正在覓食草地上的蚯蚓..." 
+              class="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-3">
+          <button 
+            type="submit" 
+            id="btn-submit" 
+            class="w-full py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 active:bg-brand-700 text-white font-semibold transition-all shadow-md hover:shadow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span id="submit-text">發送測試資料 (POST)</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Response and Diagnostic Log Section -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-terminal text-slate-600"></i> 傳輸記錄與伺服器回應
+        </h2>
+        <span id="status-badge" class="hidden text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+          閒置
+        </span>
+      </div>
+
+      <div class="bg-slate-900 rounded-xl p-4 font-mono text-xs text-slate-200 overflow-x-auto min-h-[140px] max-h-96 flex flex-col justify-between">
+        <pre id="log-output" class="whitespace-pre-wrap leading-relaxed text-slate-400">尚未發送任何測試資料。請輸入網址並點擊上方「發送測試資料」。</pre>
+      </div>
+
+      <!-- Common Troubles Section -->
+      <div class="bg-amber-50/60 rounded-xl p-4 border border-amber-200/70 text-xs text-amber-900 space-y-1.5">
+        <p class="font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> CORS 與部署疑難排解提示：
+        </p>
+        <ul class="list-disc list-inside space-y-1 text-slate-600 pl-1">
+          <li><strong>誰可以存取 (Who has access)</strong>：Apps Script 部署設定務必設為 <code>任何人 (Anyone)</code>。</li>
+          <li><strong>執行身分 (Execute as)</strong>：需設為 <code>我 (Me)</code>，確保腳本能以您的權限寫入試算表。</li>
+          <li><strong>修改代碼後</strong>：必須點擊「部署」&gt;「管理部署」&gt; 編輯並將版本升級至「<strong>新版本</strong>」，否則修改不會生效。</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Local storage key
+    const STORAGE_KEY = "gas_test_endpoint_url";
+
+    // DOM Elements
+    const urlInput = document.getElementById("gas-url");
+    const clearUrlBtn = document.getElementById("btn-clear-url");
+    const testForm = document.getElementById("test-form");
+    const btnSetNow = document.getElementById("btn-set-now");
+    const btnGetGps = document.getElementById("btn-get-gps");
+    const gpsBtnText = document.getElementById("gps-btn-text");
+    const btnFillSample = document.getElementById("btn-fill-sample");
+    const btnSubmit = document.getElementById("btn-submit");
+    const submitText = document.getElementById("submit-text");
+    const logOutput = document.getElementById("log-output");
+    const statusBadge = document.getElementById("status-badge");
+
+    // Sample datasets for random test filling
+    const sampleSpeciesList = [
+      { species: "黑冠麻鷺", loc: "行政大樓後方草坪", qty: "1 隻", note: "在草地上定格警戒，隨後抓出一條蚯蚓" },
+      { species: "五色鳥 (臺灣擬啄木)", loc: "體育館旁樟樹林", qty: "2 隻", note: "停在高處枯枝發出叩叩叩的叫聲" },
+      { species: "鳳頭蒼鷹", loc: "圖書館綠映中庭", qty: "1 隻", note: "低空掠過樹冠層，造成小型鳥類騷動" },
+      { species: "白腹秧雞", loc: "生態池木棧道", qty: "1 隻", note: "在蘆葦叢邊緣涉水覓食" },
+      { species: "斯文豪氏攀木蜥蜴", loc: "自然步道石階旁", qty: "3 隻", note: "在欄杆上曬太陽並進行伏地挺身威嚇動作" }
+    ];
+
+    window.addEventListener("DOMContentLoaded", () => {
+      // Restore cached URL
+      const cachedUrl = localStorage.getItem(STORAGE_KEY);
+      if (cachedUrl) {
+        urlInput.value = cachedUrl;
+      }
+
+      // Default timestamp
+      setCurrentTime();
+    });
+
+    // Save URL on change
+    urlInput.addEventListener("input", () => {
+      localStorage.setItem(STORAGE_KEY, urlInput.value.trim());
+    });
+
+    clearUrlBtn.addEventListener("click", () => {
+      urlInput.value = "";
+      localStorage.removeItem(STORAGE_KEY);
+      urlInput.focus();
+    });
+
+    // Set current time helper
+    function setCurrentTime() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const formatted = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      document.getElementById("field-timestamp").value = formatted;
+    }
+
+    btnSetNow.addEventListener("click", setCurrentTime);
+
+    btnGetGps.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        setLog("❌ 瀏覽器不支援地理定位功能。");
+        return;
+      }
+
+      gpsBtnText.textContent = "定位中...";
+      btnGetGps.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude.toFixed(6);
+          const lng = position.coords.longitude.toFixed(6);
+          document.getElementById("field-gps").value = `${lat}, ${lng}`;
+          gpsBtnText.textContent = "已定位";
+          btnGetGps.disabled = false;
+          setTimeout(() => { gpsBtnText.textContent = "抓取定位"; }, 2000);
+        },
+        (error) => {
+          gpsBtnText.textContent = "定位失敗";
+          btnGetGps.disabled = false;
+          let msg = "無法取得定位";
+          if (error.code === 1) msg = "請允許瀏覽器存取位置權限";
+          if (error.code === 2) msg = "無法偵測到位置資訊";
+          if (error.code === 3) msg = "定位逾時";
+          setLog(`⚠️ GPS 定位提示: ${msg}`);
+          setTimeout(() => { gpsBtnText.textContent = "抓取定位"; }, 2500);
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    });
+
+    btnFillSample.addEventListener("click", () => {
+      setCurrentTime();
+      const randomSample = sampleSpeciesList[Math.floor(Math.random() * sampleSpeciesList.length)];
+      
+      document.getElementById("field-location").value = randomSample.loc;
+      document.getElementById("field-species").value = randomSample.species;
+      document.getElementById("field-quantity").value = randomSample.qty;
+      document.getElementById("field-note").value = randomSample.note;
+
+      // Mock random campus coordinates if GPS is blank
+      if (!document.getElementById("field-gps").value) {
+        const mockLat = (25.174 + Math.random() * 0.005).toFixed(6);
+        const mockLng = (121.440 + Math.random() * 0.005).toFixed(6);
+        document.getElementById("field-gps").value = `${mockLat}, ${mockLng}`;
+      }
+
+      setLog("💡 已自動代入隨機測試生態資料，點擊下方「發送測試資料」即可測試！");
+    });
+
+    // Helper: update status badge
+    function updateBadge(type, text) {
+      statusBadge.classList.remove("hidden", "bg-emerald-100", "text-emerald-700", "bg-rose-100", "text-rose-700", "bg-blue-100", "text-blue-700");
+      if (type === "success") {
+        statusBadge.classList.add("bg-emerald-100", "text-emerald-700");
+      } else if (type === "error") {
+        statusBadge.classList.add("bg-rose-100", "text-rose-700");
+      } else if (type === "loading") {
+        statusBadge.classList.add("bg-blue-100", "text-blue-700");
+      }
+      statusBadge.textContent = text;
+    }
+
+    // Helper: log message display
+    function setLog(content) {
+      logOutput.textContent = content;
+    }
+
+    testForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const url = urlInput.value.trim();
+      if (!url) {
+        alert("請先填寫 Google Apps Script 網頁應用程式網址！");
+        urlInput.focus();
+        return;
+      }
+
+      // Collect payload
+      const payload = {
+        timestamp: document.getElementById("field-timestamp").value.trim(),
+        location: document.getElementById("field-location").value.trim(),
+        gps: document.getElementById("field-gps").value.trim(),
+        species: document.getElementById("field-species").value.trim(),
+        quantityWithUnit: document.getElementById("field-quantity").value.trim(),
+        note: document.getElementById("field-note").value.trim()
+      };
+
+      // Set loading UI state
+      btnSubmit.disabled = true;
+      submitText.textContent = "傳送中...";
+      updateBadge("loading", "發送請求中");
+      
+      const requestLog = `[發送時間] ${new Date().toLocaleTimeString()}\n` +
+                         `[請求網址] ${url}\n` +
+                         `[發送資料]\n${JSON.stringify(payload, null, 2)}\n\n` +
+                         `正在連線到 Apps Script...`;
+      setLog(requestLog);
+
+      try {
+        // Critical: Using text/plain headers to bypass CORS Preflight issues in GAS
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const rawText = await response.text();
+        let jsonResponse;
+        try {
+          jsonResponse = JSON.parse(rawText);
+        } catch {
+          jsonResponse = null;
+        }
+
+        if (response.ok && jsonResponse && jsonResponse.status === "success") {
+          updateBadge("success", "寫入成功 (200 OK)");
+          setLog(
+            `✅ 成功寫入試算表！\n\n` +
+            `[狀態碼] ${response.status} ${response.statusText}\n` +
+            `[伺服器回傳]\n${JSON.stringify(jsonResponse, null, 2)}`
+          );
+        } else {
+          // Failure or error response returned from GAS
+          updateBadge("error", "回傳異常");
+          setLog(
+            `⚠️ 伺服器已回應但傳回錯誤訊息：\n\n` +
+            `[狀態碼] ${response.status}\n` +
+            `[原始回應內容]\n${rawText}`
+          );
+        }
+      } catch (err) {
+        // Network or CORS blockage
+        updateBadge("error", "連線失敗 (CORS/網址錯誤)");
+        setLog(
+          `❌ 請求失敗，原因：${err.message}\n\n` +
+          `常見排查方向：\n` +
+          `1. 檢查 Apps Script 是否設為「誰可以存取：任何人 (Anyone)」\n` +
+          `2. 網址結尾是否包含 /exec (非 /dev)\n` +
+          `3. 是否有尚未授權試算表存取的權限視窗\n` +
+          `4. 確認試算表權限是否允許寫入`
+        );
+      } finally {
+        btnSubmit.disabled = false;
+        submitText.textContent = "發送測試資料 (POST)";
+      }
+    });
+  </script>
+</body>
+</html>
